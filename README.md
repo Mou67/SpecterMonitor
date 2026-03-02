@@ -37,7 +37,7 @@
 
 **SpecterMonitor** is a high-performance hardware dashboard that monitors every PC on your local network in real time. Built with a Python backend (FastAPI + WebSocket streaming) and a Next.js frontend featuring glassmorphism design and spring-based animations.
 
-> Imagine: Windows Task Manager meets Grafana.
+> Imagine: Windows Task Manager meets Grafana and they take some Pills so you can Monitor your Maschines localy so you dont have to run to see whats going on.
 
 <br/>
 
