@@ -37,7 +37,7 @@
 
 **SpecterMonitor** is a high-performance hardware dashboard that monitors every PC on your local network in real time. Built with a Python backend (FastAPI + WebSocket streaming) and a Next.js frontend featuring glassmorphism design and spring-based animations.
 
-> Imagine: Windows Task Manager meets Grafana.
+> Imagine: Windows Task Manager meets Grafana and they take some Pills so you can Monitor your Maschines localy so you dont have to run to see whats going on.
 
 <br/>
 
@@ -100,16 +100,18 @@ Click the RAM card for the physical memory view:
 
 | Status | Feature | Description |
 |:---:|---|---|
-| Planned | **Remote Desktop** | View and control a remote PC's screen live in the browser — like TeamViewer, but local on your own network. Low-latency via WebSocket + WebRTC. |
-| In Progress | **GPU Deep-Dive** | Detailed view for graphics cards: VRAM usage, shader clock, fan speed, power draw, driver version, and temperature history. |
-| In Progress | **Disk Deep-Dive** | S.M.A.R.T. data, read/write rates per partition, SSD health, NVMe temperature, and wear level. |
-| Planned | **Alert System** | Configurable thresholds (CPU > 95%, RAM > 90%, Temp > 85C) with desktop notifications and optional Discord/Telegram webhook. |
-| Planned | **Remote File Manager** | Browse, upload/download, and manage files on connected PCs — directly from the dashboard. |
-| Planned | **Docker Monitoring** | Container status, per-container resource usage, logs, and start/stop/restart directly in the dashboard. |
-| Planned | **Metric History & Export** | Long-term recording of all metrics in SQLite/InfluxDB with CSV/JSON export and historical graphs over days/weeks. |
-| Planned | **Wake-on-LAN** | Wake PCs on the network from the dashboard — magic packet with one click. |
-| Planned | **Authentication** | Login system with password protection so not everyone on the network can access the dashboard. |
-| Planned | **Mobile Layout** | Responsive display for smartphones and tablets with touch-optimized gestures. |
+| 📃 | **Remote Desktop** | View and control a remote PC's screen live in the browser — like TeamViewer, but local on your own network. Low-latency via WebSocket + WebRTC. |
+| 🛠️ | **GPU Deep-Dive** | Detailed view for graphics cards: VRAM usage, shader clock, fan speed, power draw, driver version, and temperature history. |
+| 🛠️ | **Disk Deep-Dive** | S.M.A.R.T. data, read/write rates per partition, SSD health, NVMe temperature, and wear level. |
+| 📃 | **Alert System** | Configurable thresholds (CPU > 95%, RAM > 90%, Temp > 85C) with desktop notifications and optional Discord/Telegram webhook. |
+| 📃 | **Remote File Manager** | Browse, upload/download, and manage files on connected PCs — directly from the dashboard. |
+| 📃 | **Docker Monitoring** | Container status, per-container resource usage, logs, and start/stop/restart directly in the dashboard. |
+| 📃 | **Metric History & Export** | Long-term recording of all metrics in SQLite/InfluxDB with CSV/JSON export and historical graphs over days/weeks. |
+| 📃 | **Wake-on-LAN** | Wake PCs on the network from the dashboard — magic packet with one click. |
+| 📃 | **Authentication** | Login system with password protection so not everyone on the network can access the dashboard. |
+| 📃 | **Mobile Layout** | Responsive display for smartphones and tablets with touch-optimized gestures. |
+
+> 🛠️ = In Work | 📃 = Planned
 
 <br/>
 
