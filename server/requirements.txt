@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+psutil
+GPUtil
+websockets
+pywin32
+Pillow
+py-cpuinfo
+WMI
