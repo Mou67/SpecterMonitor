@@ -24,9 +24,7 @@
 <br/>
 
 <p align="center">
-  <video src="Readme/video/video_1.mp4" width="90%" controls autoplay loop muted style="border-radius: 15px; border: 2px solid #00cfd5; box-shadow: 0 0 20px rgba(0, 207, 213, 0.3);">
-    Your browser does not support embedded video.
-  </video>
+  <img src="Readme/gifs/video_1.gif" width="90%" alt="SpecterMonitor Demo" style="border-radius: 15px; border: 2px solid #00cfd5; box-shadow: 0 0 20px rgba(0, 207, 213, 0.3);" />
 </p>
 
 <br/>
@@ -229,8 +227,8 @@ The agent automatically connects to the server and streams its metrics.
     ├── Images/
     │   ├── Image_1.png          # CPU deep-dive screenshot
     │   └── Image_2.png          # RAM deep-dive screenshot
-    └── video/
-        └── video_1.mp4          # Demo video
+    └── gifs/
+        └── video_1.gif          # Demo GIF
 ```
 
 <br/>
