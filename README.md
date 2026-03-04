@@ -57,6 +57,12 @@ Click the CPU card and an animated overlay expands with spring physics into full
   <img src="Readme/Images/Image_1.png" width="90%" style="border-radius: 12px; border: 1px solid rgba(0, 240, 255, 0.2); box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);" alt="CPU Deep-Dive Overlay" />
 </p>
 
+### SpecterMonitor Control Service | In Work !
+
+<p align="center">
+  <img src="Readme/Images/Image_3.png" width="40%" style="border-radius: 12px; border: 1px solid rgba(0, 240, 255, 0.2); box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);" alt="SpecterMonitor Control Service" />
+</p>
+
 ### RAM Deep-Dive
 
 Click the RAM card for the physical memory view:
