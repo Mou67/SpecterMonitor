@@ -101,8 +101,8 @@ Click the RAM card for the physical memory view:
 | Status | Feature | Description |
 |:---:|---|---|
 | 📃 | **Remote Desktop** | View and control a remote PC's screen live in the browser — like TeamViewer, but local on your own network. Low-latency via WebSocket + WebRTC. |
-| 🛠️ | **GPU Deep-Dive** | Detailed view for graphics cards: VRAM usage, shader clock, fan speed, power draw, driver version, and temperature history. |
-| 🛠️ | **Disk Deep-Dive** | S.M.A.R.T. data, read/write rates per partition, SSD health, NVMe temperature, and wear level. |
+| 📃 | **GPU Deep-Dive** | Detailed view for graphics cards: VRAM usage, shader clock, fan speed, power draw, driver version, and temperature history. |
+| 📃 | **Disk Deep-Dive** | S.M.A.R.T. data, read/write rates per partition, SSD health, NVMe temperature, and wear level. |
 | 📃 | **Alert System** | Configurable thresholds (CPU > 95%, RAM > 90%, Temp > 85C) with desktop notifications and optional Discord/Telegram webhook. |
 | 📃 | **Remote File Manager** | Browse, upload/download, and manage files on connected PCs — directly from the dashboard. |
 | 📃 | **Docker Monitoring** | Container status, per-container resource usage, logs, and start/stop/restart directly in the dashboard. |
@@ -110,6 +110,7 @@ Click the RAM card for the physical memory view:
 | 📃 | **Wake-on-LAN** | Wake PCs on the network from the dashboard — magic packet with one click. |
 | 📃 | **Authentication** | Login system with password protection so not everyone on the network can access the dashboard. |
 | 📃 | **Mobile Layout** | Responsive display for smartphones and tablets with touch-optimized gestures. |
+| 🛠️ | **SpecterMonitor Control Service** | An Windows App build with Electron to manage the application / start Server + Dashboard + Client / all in one |
 
 > 🛠️ = In Work | 📃 = Planned
 
