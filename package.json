@@ -1,6 +1,6 @@
 {
   "name": "spectermonitor-desktop",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "SpecterMonitor Desktop – Real-time hardware monitoring",
   "main": "electron/main.js",
   "scripts": {
@@ -41,8 +41,6 @@
         "to": "dashboard",
         "filter": ["**/*", "!node_modules/**", "!.next/**"]
       },
-      "start.bat",
-      "setup-firewall.ps1",
       "VERSION",
       "CHANGELOG.md"
     ],
