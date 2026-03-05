@@ -6,8 +6,13 @@ __pycache__/
 .env.local
 dist/
 build/
+out/
 *.egg-info/
 .DS_Store
 Thumbs.db
 .vscode/
+.idea/
 *.log
+*.exe
+*.msi
+package-lock.json

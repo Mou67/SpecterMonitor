@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import TitleBar from "@/components/TitleBar";
 
 export const metadata: Metadata = {
   title: "SpecterMonitor | Control Center",
@@ -19,7 +20,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <TitleBar />
+        {children}
+      </body>
     </html>
   );
 }

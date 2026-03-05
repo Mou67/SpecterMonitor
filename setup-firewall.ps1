@@ -1,11 +1,13 @@
 # ============================================
-# Network Task Manager - Firewall Setup
+# SpecterMonitor - Firewall Setup
 # ============================================
-# Dieses Skript oeffnet die Ports 3000 (Frontend)
-# und 8765 (Backend) in der Windows-Firewall.
+# Oeffnet die Ports 3000 (Dashboard), 8765 (Server)
+# und 47761/UDP (Auto-Discovery Beacon) in der
+# Windows-Firewall fuer das private Netzwerk.
 #
-# MUSS als Administrator ausgefuehrt werden!
-# Rechtsklick -> "Als Administrator ausfuehren"
+# Wird automatisch von start.bat aufgerufen.
+# Kann auch manuell ausgefuehrt werden:
+#   Rechtsklick -> "Als Administrator ausfuehren"
 # ============================================
 
 #Requires -RunAsAdministrator
@@ -14,60 +16,101 @@ $ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  Network Task Manager - Firewall Setup" -ForegroundColor Cyan
+Write-Host "  SpecterMonitor - Firewall Setup" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Port 3000 - Next.js Frontend
-$ruleName3000 = "Network Task Manager - Frontend (TCP 3000)"
-$existing3000 = Get-NetFirewallRule -DisplayName $ruleName3000 -ErrorAction SilentlyContinue
+# --- Helper function to create or verify a firewall rule ---
+function Ensure-FirewallRule {
+    param(
+        [string]$DisplayName,
+        [string]$Protocol,
+        [int]$Port,
+        [string]$Description
+    )
 
-if ($existing3000) {
-    Write-Host "[OK] Regel '$ruleName3000' existiert bereits." -ForegroundColor Green
-} else {
-    New-NetFirewallRule `
-        -DisplayName $ruleName3000 `
-        -Direction Inbound `
-        -Protocol TCP `
-        -LocalPort 3000 `
-        -Action Allow `
-        -Profile Private `
-        -Description "Erlaubt eingehende Verbindungen zum Network Task Manager Frontend"
-    Write-Host "[+] Regel '$ruleName3000' erstellt." -ForegroundColor Green
+    $existing = Get-NetFirewallRule -DisplayName $DisplayName -ErrorAction SilentlyContinue
+
+    if ($existing) {
+        # Update existing rule to cover all profiles
+        Set-NetFirewallRule -DisplayName $DisplayName -Profile Any -ErrorAction SilentlyContinue
+        Write-Host "[OK] Regel '$DisplayName' existiert bereits (alle Profile aktiv)." -ForegroundColor Green
+    } else {
+        New-NetFirewallRule `
+            -DisplayName $DisplayName `
+            -Direction Inbound `
+            -Protocol $Protocol `
+            -LocalPort $Port `
+            -Action Allow `
+            -Profile Any `
+            -Description $Description | Out-Null
+        Write-Host "[+] Regel '$DisplayName' erstellt (alle Profile)." -ForegroundColor Green
+    }
 }
 
-# Port 8765 - FastAPI Backend / WebSocket
-$ruleName8765 = "Network Task Manager - Backend (TCP 8765)"
-$existing8765 = Get-NetFirewallRule -DisplayName $ruleName8765 -ErrorAction SilentlyContinue
+# Port 3000 - Next.js Dashboard
+Ensure-FirewallRule `
+    -DisplayName "SpecterMonitor - Dashboard (TCP 3000)" `
+    -Protocol TCP `
+    -Port 3000 `
+    -Description "Erlaubt eingehende Verbindungen zum SpecterMonitor Dashboard"
 
-if ($existing8765) {
-    Write-Host "[OK] Regel '$ruleName8765' existiert bereits." -ForegroundColor Green
-} else {
-    New-NetFirewallRule `
-        -DisplayName $ruleName8765 `
-        -Direction Inbound `
-        -Protocol TCP `
-        -LocalPort 8765 `
-        -Action Allow `
-        -Profile Private `
-        -Description "Erlaubt eingehende Verbindungen zum Network Task Manager Backend/WebSocket"
-    Write-Host "[+] Regel '$ruleName8765' erstellt." -ForegroundColor Green
+# Port 8765 - Python Server / WebSocket
+Ensure-FirewallRule `
+    -DisplayName "SpecterMonitor - Server (TCP 8765)" `
+    -Protocol TCP `
+    -Port 8765 `
+    -Description "Erlaubt eingehende Verbindungen zum SpecterMonitor Server/WebSocket"
+
+# Port 47761 - UDP Auto-Discovery Beacon
+Ensure-FirewallRule `
+    -DisplayName "SpecterMonitor - Beacon (UDP 47761)" `
+    -Protocol UDP `
+    -Port 47761 `
+    -Description "Erlaubt UDP-Broadcast fuer SpecterMonitor Auto-Discovery im LAN"
+
+Write-Host ""
+Write-Host "Fertig! Alle Ports sind jetzt offen (alle Netzwerk-Profile)." -ForegroundColor Green
+Write-Host ""
+
+# --- Netzwerk-Profil anzeigen ---
+$profiles = Get-NetConnectionProfile -ErrorAction SilentlyContinue
+if ($profiles) {
+    Write-Host "Aktive Netzwerk-Profile:" -ForegroundColor Cyan
+    foreach ($p in $profiles) {
+        $color = if ($p.NetworkCategory -eq "Public") { "Red" } else { "Green" }
+        Write-Host "  $($p.InterfaceAlias): $($p.NetworkCategory)" -ForegroundColor $color
+    }
+
+    $publicNets = $profiles | Where-Object { $_.NetworkCategory -eq "Public" }
+    if ($publicNets) {
+        Write-Host ""
+        Write-Host "  Hinweis: Firewall-Regeln gelten jetzt fuer ALLE Profile," -ForegroundColor Yellow
+        Write-Host "  daher funktioniert es auch mit 'Public' Netzwerken." -ForegroundColor Yellow
+    }
 }
 
 Write-Host ""
-Write-Host "Fertig! Beide Ports sind jetzt im privaten Netzwerk offen." -ForegroundColor Green
-Write-Host ""
 
-# Aktuelle LAN-IP anzeigen
-$ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.IPAddress -notlike "169.*" } | Select-Object -First 1).IPAddress
+# --- Aktuelle LAN-IP anzeigen (virtuelle Adapter filtern) ---
+$ip = (Get-NetIPConfiguration |
+    Where-Object {
+        $_.IPv4DefaultGateway -ne $null -and
+        $_.NetAdapter.Status -eq "Up"
+    } |
+    Select-Object -First 1
+).IPv4Address.IPAddress
+
 if ($ip) {
     Write-Host "Deine LAN-IP: $ip" -ForegroundColor Yellow
     Write-Host "Dashboard:    http://${ip}:3000" -ForegroundColor Yellow
-    Write-Host "Backend:      http://${ip}:8765" -ForegroundColor Yellow
+    Write-Host "Server:       http://${ip}:8765" -ForegroundColor Yellow
+} else {
+    Write-Host "LAN-IP konnte nicht ermittelt werden." -ForegroundColor DarkYellow
+    Write-Host "Dashboard:    http://localhost:3000" -ForegroundColor Yellow
 }
 
 Write-Host ""
-Write-Host "Zum Entfernen der Regeln:" -ForegroundColor DarkGray
-Write-Host "  Remove-NetFirewallRule -DisplayName '$ruleName3000'" -ForegroundColor DarkGray
-Write-Host "  Remove-NetFirewallRule -DisplayName '$ruleName8765'" -ForegroundColor DarkGray
+Write-Host "Zum Entfernen aller SpecterMonitor-Regeln:" -ForegroundColor DarkGray
+Write-Host "  Get-NetFirewallRule -DisplayName 'SpecterMonitor*' | Remove-NetFirewallRule" -ForegroundColor DarkGray
 Write-Host ""

@@ -127,6 +127,78 @@ body::after {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* ── Custom Electron Titlebar ──────────────────────────── */
+.titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(10, 10, 20, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 240, 255, 0.08);
+  z-index: 9999;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.titlebar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 14px;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(224, 224, 224, 0.7);
+  letter-spacing: 0.5px;
+}
+
+.titlebar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00f0ff;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+}
+
+.titlebar-controls {
+  display: flex;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: rgba(224, 224, 224, 0.6);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.titlebar-btn:hover {
+  background: rgba(0, 240, 255, 0.1);
+  color: #00f0ff;
+}
+
+.titlebar-btn-close:hover {
+  background: rgba(255, 7, 58, 0.85);
+  color: #fff;
+}
+
+/* Push page content below the titlebar when in Electron */
+body:has(.titlebar) {
+  padding-top: 36px;
+}
+
 /* Recharts tooltip */
 .recharts-default-tooltip {
   background: rgba(15, 15, 30, 0.9) !important;

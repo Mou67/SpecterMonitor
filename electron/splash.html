@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      user-select: none;
+      -webkit-app-region: drag;
+    }
+    .splash {
+      background: rgba(10, 10, 20, 0.96);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 20px;
+      padding: 48px 40px 40px;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(0, 240, 255, 0.08), 0 20px 60px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      position: relative;
+      overflow: hidden;
+      width: 480px;
+    }
+    .splash::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      border-radius: 20px;
+    }
+    .ascii {
+      font-family: "Cascadia Code", "JetBrains Mono", "Consolas", monospace;
+      font-size: 10.5px;
+      line-height: 1.25;
+      color: #00f0ff;
+      white-space: pre;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+      margin-bottom: 28px;
+      position: relative;
+      z-index: 1;
+    }
+    .status {
+      font-size: 13px;
+      color: rgba(224, 224, 224, 0.7);
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00f0ff;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50%      { opacity: 1;   transform: scale(1.2); }
+    }
+    .glow-line {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+      border-radius: 2px;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+    }
+    .version {
+      font-size: 11px;
+      color: rgba(0, 240, 255, 0.35);
+      margin-top: 16px;
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="splash">
+    <div class="glow-line"></div>
+    <div class="ascii"> ____                  _            __  __             _ _
+/ ___| _ __   ___  ___| |_ ___ _ __|  \/  | ___  _ __ (_) |_ ___  _ __
+\___ \| '_ \ / _ \/ __| __/ _ \ '__| |\/| |/ _ \| '_ \| | __/ _ \| '__|
+ ___) | |_) |  __/ (__| ||  __/ |  | |  | | (_) | | | | | || (_) | |
+|____/| .__/ \___|\___|\__\___|_|  |_|  |_|\___/|_| |_|_|\__\___/|_|
+      |_|</div>
+    <p class="status">Initializing Control Center&hellip;</p>
+    <div class="dots">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <p class="version">v1.0.0</p>
+  </div>
+</body>
+</html>

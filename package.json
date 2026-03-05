@@ -1,0 +1,74 @@
+{
+  "name": "spectermonitor-desktop",
+  "version": "1.0.0",
+  "description": "SpecterMonitor Desktop – Real-time hardware monitoring",
+  "main": "electron/main.js",
+  "scripts": {
+    "electron": "electron .",
+    "dist": "electron-builder --win",
+    "dist:dir": "electron-builder --win --dir"
+  },
+  "author": "SpecterMonitor",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.spectermonitor.desktop",
+    "productName": "SpecterMonitor",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "server",
+        "to": "server",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "client",
+        "to": "client",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "dashboard",
+        "to": "dashboard",
+        "filter": ["**/*", "!node_modules/**", "!.next/**"]
+      },
+      "start.bat",
+      "setup-firewall.ps1",
+      "VERSION",
+      "CHANGELOG.md"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "Mou67",
+      "repo": "SpecterMonitor"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SpecterMonitor"
+    }
+  }
+}

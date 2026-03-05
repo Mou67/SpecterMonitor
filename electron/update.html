@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    user-select: none;
+    -webkit-app-region: drag;
+  }
+
+  /* ── Glass card ────────────────────────── */
+  .card {
+    background: rgba(10, 10, 20, 0.97);
+    border: 1px solid rgba(0, 240, 255, 0.15);
+    border-radius: 20px;
+    width: 490px;
+    max-height: 530px;
+    padding: 0;
+    box-shadow:
+      0 0 60px rgba(0, 240, 255, 0.06),
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    -webkit-app-region: no-drag;
+  }
+
+  /* Grid overlay */
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    border-radius: 20px;
+    z-index: 0;
+  }
+
+  /* Glow line top */
+  .glow-line {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 50%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+    z-index: 2;
+  }
+
+  /* ── Header ────────────────────────────── */
+  .header {
+    padding: 32px 32px 0;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .update-icon {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(0, 240, 255, 0); }
+    50%      { box-shadow: 0 0 20px rgba(0, 240, 255, 0.15); }
+  }
+
+  .update-icon svg {
+    width: 24px; height: 24px;
+    stroke: #00f0ff;
+    stroke-width: 2;
+    fill: none;
+  }
+
+  h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #e8e8e8;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: rgba(224, 224, 224, 0.45);
+  }
+
+  /* ── Version badges ────────────────────── */
+  .versions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px 32px 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ver-badge {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "Cascadia Code", monospace;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .ver-current {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(224, 224, 224, 0.5);
+  }
+
+  .ver-arrow {
+    color: rgba(0, 240, 255, 0.5);
+    font-size: 16px;
+  }
+
+  .ver-new {
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    color: #00f0ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  }
+
+  /* ── Changelog toggle ──────────────────── */
+  .changelog-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 16px auto 0;
+    padding: 6px 16px;
+    border: 1px solid rgba(0, 240, 255, 0.12);
+    border-radius: 6px;
+    background: rgba(0, 240, 255, 0.04);
+    color: rgba(0, 240, 255, 0.7);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .changelog-btn:hover {
+    background: rgba(0, 240, 255, 0.1);
+    border-color: rgba(0, 240, 255, 0.3);
+    color: #00f0ff;
+  }
+
+  .changelog-btn .arrow {
+    transition: transform 0.2s;
+    font-size: 10px;
+  }
+
+  .changelog-btn.open .arrow {
+    transform: rotate(180deg);
+  }
+
+  /* ── Changelog content ─────────────────── */
+  .changelog-wrap {
+    padding: 0 32px;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+
+  .changelog {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s;
+    opacity: 0;
+  }
+
+  .changelog.open {
+    max-height: 180px;
+    opacity: 1;
+    overflow-y: auto;
+  }
+
+  .changelog-inner {
+    margin-top: 12px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.7;
+    color: rgba(224, 224, 224, 0.65);
+  }
+
+  .changelog-inner h1, .changelog-inner h2, .changelog-inner h3 {
+    color: #00f0ff;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 10px 0 4px;
+  }
+
+  .changelog-inner h1:first-child,
+  .changelog-inner h2:first-child,
+  .changelog-inner h3:first-child {
+    margin-top: 0;
+  }
+
+  .changelog-inner ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .changelog-inner li {
+    padding-left: 16px;
+    position: relative;
+    margin: 2px 0;
+  }
+
+  .changelog-inner li::before {
+    content: "›";
+    position: absolute;
+    left: 4px;
+    color: rgba(0, 240, 255, 0.5);
+    font-weight: bold;
+  }
+
+  .changelog-inner code {
+    background: rgba(0, 240, 255, 0.08);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: #00f0ff;
+  }
+
+  .changelog-inner strong {
+    color: #e0e0e0;
+    font-weight: 600;
+  }
+
+  .changelog-inner p {
+    margin: 4px 0;
+  }
+
+  /* Scrollbar in changelog */
+  .changelog::-webkit-scrollbar { width: 4px; }
+  .changelog::-webkit-scrollbar-track { background: transparent; }
+  .changelog::-webkit-scrollbar-thumb {
+    background: rgba(0, 240, 255, 0.15);
+    border-radius: 2px;
+  }
+
+  /* ── Progress bar ──────────────────────── */
+  .progress-section {
+    padding: 0 32px;
+    margin-top: 16px;
+    position: relative;
+    z-index: 1;
+    display: none;
+  }
+
+  .progress-section.visible { display: block; }
+
+  .progress-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00d4ff, #00f0ff);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    position: relative;
+  }
+
+  /* shimmer on progress bar */
+  .progress-fill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 11px;
+    color: rgba(224, 224, 224, 0.4);
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  /* ── Status text ───────────────────────── */
+  .status-text {
+    text-align: center;
+    padding: 12px 32px 0;
+    font-size: 12px;
+    color: rgba(0, 240, 255, 0.6);
+    position: relative;
+    z-index: 1;
+    display: none;
+  }
+
+  .status-text.visible { display: block; }
+
+  .status-text.error { color: rgba(255, 7, 58, 0.8); }
+
+  /* ── Action buttons ────────────────────── */
+  .actions {
+    display: flex;
+    gap: 10px;
+    padding: 20px 32px 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 10px 0;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    text-align: center;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(0, 240, 255, 0.06));
+    border-color: rgba(0, 240, 255, 0.3);
+    color: #00f0ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(0, 240, 255, 0.12));
+    border-color: rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: rgba(224, 224, 224, 0.5);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(224, 224, 224, 0.8);
+  }
+
+  .btn-restart {
+    background: linear-gradient(135deg, rgba(57, 255, 20, 0.15), rgba(57, 255, 20, 0.06));
+    border-color: rgba(57, 255, 20, 0.3);
+    color: #39ff14;
+    text-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+  }
+
+  .btn-restart:hover {
+    background: linear-gradient(135deg, rgba(57, 255, 20, 0.25), rgba(57, 255, 20, 0.12));
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.15);
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="glow-line"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="update-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h1>Update verfügbar!</h1>
+    <p class="subtitle" id="releaseName"></p>
+  </div>
+
+  <!-- Version Badges -->
+  <div class="versions">
+    <span class="ver-badge ver-current" id="verCurrent">v-.-.-</span>
+    <span class="ver-arrow">→</span>
+    <span class="ver-badge ver-new" id="verNew">v-.-.-</span>
+  </div>
+
+  <!-- Changelog Toggle -->
+  <div class="changelog-wrap">
+    <button class="changelog-btn" id="changelogBtn" onclick="toggleChangelog()">
+      Was ist neu? <span class="arrow">▼</span>
+    </button>
+    <div class="changelog" id="changelog">
+      <div class="changelog-inner" id="changelogContent">
+        Lade Release-Notes...
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section" id="progressSection">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-info">
+      <span id="progressPercent">0%</span>
+      <span id="progressSpeed"></span>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <p class="status-text" id="statusText"></p>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-primary" id="btnUpdate" onclick="onUpdate()">Jetzt aktualisieren</button>
+    <button class="btn btn-secondary" id="btnLater" onclick="onDismiss()">Später</button>
+  </div>
+</div>
+
+<script>
+  let releaseUrl = "";
+
+  // ── Minimal Markdown → HTML ──────────────
+  function renderMd(md) {
+    if (!md) return '<p style="opacity:0.4">Keine Details verfügbar.</p>';
+    let html = md
+      .split("\n")
+      .map((line) => {
+        if (line.startsWith("### ")) return "<h3>" + line.slice(4) + "</h3>";
+        if (line.startsWith("## "))  return "<h2>" + line.slice(3) + "</h2>";
+        if (line.startsWith("# "))   return "<h1>" + line.slice(2) + "</h1>";
+        if (/^[-*] /.test(line))     return "<li>" + line.slice(2) + "</li>";
+        if (!line.trim())            return "";
+        return "<p>" + line + "</p>";
+      })
+      .join("\n");
+
+    // Inline formatting
+    html = html
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/`(.+?)`/g, "<code>$1</code>");
+
+    // Wrap consecutive <li> in <ul>
+    html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
+
+    return html;
+  }
+
+  // ── Toggle changelog ─────────────────────
+  function toggleChangelog() {
+    const cl = document.getElementById("changelog");
+    const btn = document.getElementById("changelogBtn");
+    cl.classList.toggle("open");
+    btn.classList.toggle("open");
+  }
+
+  // ── Button handlers ──────────────────────
+  function onUpdate() {
+    const btn = document.getElementById("btnUpdate");
+    btn.disabled = true;
+    btn.textContent = "Download läuft...";
+    document.getElementById("progressSection").classList.add("visible");
+    window.updateAPI.startDownload();
+  }
+
+  function onDismiss() {
+    window.updateAPI.dismiss();
+  }
+
+  function onInstall() {
+    window.updateAPI.installNow();
+  }
+
+  // ── Format bytes ─────────────────────────
+  function fmtBytes(b) {
+    if (b < 1024) return b + " B";
+    if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
+    return (b / 1048576).toFixed(1) + " MB";
+  }
+
+  // ── IPC Listeners ────────────────────────
+  window.updateAPI.onUpdateInfo((info) => {
+    document.getElementById("verCurrent").textContent = "v" + info.currentVersion;
+    document.getElementById("verNew").textContent = "v" + info.latestVersion;
+    document.getElementById("releaseName").textContent = info.releaseName;
+    document.getElementById("changelogContent").innerHTML = renderMd(info.releaseNotes);
+    releaseUrl = info.releaseUrl;
+  });
+
+  window.updateAPI.onDownloadProgress((p) => {
+    document.getElementById("progressFill").style.width = p.percent + "%";
+    document.getElementById("progressPercent").textContent = p.percent + "%";
+    document.getElementById("progressSpeed").textContent = fmtBytes(p.bytesPerSecond) + "/s";
+  });
+
+  window.updateAPI.onUpdateDownloaded(() => {
+    document.getElementById("progressFill").style.width = "100%";
+    document.getElementById("progressPercent").textContent = "100%";
+
+    const status = document.getElementById("statusText");
+    status.textContent = "Download abgeschlossen!";
+    status.classList.add("visible");
+
+    // Swap buttons
+    const actions = document.querySelector(".actions");
+    actions.innerHTML =
+      '<button class="btn btn-restart" onclick="onInstall()">Jetzt neu starten</button>' +
+      '<button class="btn btn-secondary" onclick="onDismiss()">Später</button>';
+  });
+
+  window.updateAPI.onUpdateError((msg) => {
+    const status = document.getElementById("statusText");
+    status.textContent = msg;
+    status.classList.add("visible", "error");
+
+    const btn = document.getElementById("btnUpdate");
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Erneut versuchen";
+    }
+  });
+</script>
+
+</body>
+</html>

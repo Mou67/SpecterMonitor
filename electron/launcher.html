@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    user-select: none;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Titlebar ─────────────────────────── */
+  .titlebar {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(8, 8, 16, 0.98);
+    border-bottom: 1px solid rgba(0, 240, 255, 0.08);
+    -webkit-app-region: drag;
+    flex-shrink: 0;
+  }
+
+  .titlebar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(224, 224, 224, 0.7);
+    letter-spacing: 0.4px;
+  }
+
+  .titlebar-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #00f0ff;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+  }
+
+  .titlebar-controls {
+    display: flex;
+    -webkit-app-region: no-drag;
+  }
+
+  .tb-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px; height: 36px;
+    border: none;
+    background: transparent;
+    color: rgba(224, 224, 224, 0.6);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-size: 16px;
+  }
+  .tb-btn:hover { background: rgba(0, 240, 255, 0.1); color: #00f0ff; }
+  .tb-btn-close:hover { background: rgba(255, 7, 58, 0.85); color: #fff; }
+
+  /* ── Tab Bar ───────────────────────────── */
+  .tab-bar {
+    display: flex;
+    background: rgba(8, 8, 16, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 0;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: rgba(224, 224, 224, 0.35);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .tab-btn:hover {
+    color: rgba(224, 224, 224, 0.6);
+    background: rgba(0, 240, 255, 0.03);
+  }
+
+  .tab-btn.active {
+    color: #00f0ff;
+    border-bottom-color: #00f0ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  }
+
+  .tab-badge {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #00f0ff;
+    box-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+    margin-left: 6px;
+    vertical-align: middle;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .tab-badge.visible { opacity: 1; }
+
+  /* ── Main content ─────────────────────── */
+  .content {
+    flex: 1;
+    background: #0a0a14;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Grid overlay */
+  .content::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 240, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 240, 255, 0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* Ambient glow */
+  .content::after {
+    content: "";
+    position: absolute;
+    top: -120px; right: -120px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(0, 240, 255, 0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── Tab Panels ────────────────────────── */
+  .tab-panel {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    padding: 24px 28px 20px;
+    gap: 18px;
+    position: relative;
+    z-index: 1;
+    overflow-y: auto;
+  }
+
+  .tab-panel.active {
+    display: flex;
+  }
+
+  /* ── Header ───────────────────────────── */
+  .header {
+    text-align: center;
+    padding-bottom: 4px;
+  }
+
+  .header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .header h1 span {
+    color: #00f0ff;
+    text-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+  }
+
+  .header .sub {
+    font-size: 11px;
+    color: rgba(224, 224, 224, 0.35);
+    margin-top: 2px;
+    letter-spacing: 1px;
+  }
+
+  /* ── Service Cards ────────────────────── */
+  .services {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .svc-card {
+    display: flex;
+    align-items: center;
+    padding: 14px 18px;
+    background: rgba(15, 15, 30, 0.55);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+
+  .svc-card:hover {
+    border-color: rgba(0, 240, 255, 0.12);
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.04);
+  }
+
+  .svc-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .svc-dot.online {
+    background: #39ff14;
+    box-shadow: 0 0 8px rgba(57, 255, 20, 0.5);
+    animation: dot-pulse 2s ease-in-out infinite;
+  }
+
+  .svc-dot.offline {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: none;
+  }
+
+  .svc-dot.starting {
+    background: #ff6a00;
+    box-shadow: 0 0 8px rgba(255, 106, 0, 0.5);
+    animation: dot-pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.5; }
+  }
+
+  .svc-info {
+    flex: 1;
+    margin-left: 14px;
+  }
+
+  .svc-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #e0e0e0;
+  }
+
+  .svc-detail {
+    font-size: 11px;
+    color: rgba(224, 224, 224, 0.35);
+    margin-top: 1px;
+    font-family: "JetBrains Mono", "Cascadia Code", monospace;
+  }
+
+  .svc-status {
+    font-size: 11px;
+    font-weight: 500;
+    margin-right: 14px;
+  }
+
+  .svc-status.online  { color: #39ff14; }
+  .svc-status.offline { color: rgba(255, 255, 255, 0.3); }
+  .svc-status.starting { color: #ff6a00; }
+
+  .svc-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    flex-shrink: 0;
+  }
+
+  .svc-btn-start {
+    background: rgba(0, 240, 255, 0.08);
+    border-color: rgba(0, 240, 255, 0.2);
+    color: #00f0ff;
+  }
+  .svc-btn-start:hover {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.1);
+  }
+
+  .svc-btn-stop {
+    background: rgba(255, 7, 58, 0.08);
+    border-color: rgba(255, 7, 58, 0.2);
+    color: #ff073a;
+  }
+  .svc-btn-stop:hover {
+    background: rgba(255, 7, 58, 0.15);
+    border-color: rgba(255, 7, 58, 0.4);
+  }
+
+  .svc-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* ── Action Buttons ───────────────────── */
+  .actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .act-btn {
+    flex: 1;
+    padding: 12px 0;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    text-align: center;
+  }
+
+  .act-btn-primary {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.12), rgba(0, 240, 255, 0.04));
+    border-color: rgba(0, 240, 255, 0.25);
+    color: #00f0ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+  }
+  .act-btn-primary:hover {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(0, 240, 255, 0.08));
+    border-color: rgba(0, 240, 255, 0.45);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+  }
+
+  .act-btn-secondary {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: rgba(224, 224, 224, 0.5);
+  }
+  .act-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(224, 224, 224, 0.8);
+  }
+
+  .act-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* ── Footer ───────────────────────────── */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    font-size: 10px;
+    color: rgba(224, 224, 224, 0.2);
+    padding: 6px 28px 10px;
+    background: #0a0a14;
+    flex-shrink: 0;
+  }
+
+  .footer .ip {
+    font-family: "JetBrains Mono", monospace;
+    color: rgba(0, 240, 255, 0.3);
+  }
+
+  /* ── Log area ─────────────────────────── */
+  .log-area {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 10px 14px;
+    flex: 1;
+    min-height: 60px;
+    overflow-y: auto;
+    font-family: "JetBrains Mono", "Cascadia Code", monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    color: rgba(224, 224, 224, 0.4);
+  }
+
+  .log-area::-webkit-scrollbar { width: 4px; }
+  .log-area::-webkit-scrollbar-track { background: transparent; }
+  .log-area::-webkit-scrollbar-thumb {
+    background: rgba(0, 240, 255, 0.12);
+    border-radius: 2px;
+  }
+
+  .log-line { margin: 0; }
+  .log-line.info  { color: rgba(0, 240, 255, 0.6); }
+  .log-line.ok    { color: rgba(57, 255, 20, 0.7); }
+  .log-line.warn  { color: rgba(255, 106, 0, 0.7); }
+  .log-line.error { color: rgba(255, 7, 58, 0.7); }
+
+  .log-clear-btn {
+    align-self: flex-end;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(224, 224, 224, 0.4);
+    transition: all 0.2s;
+  }
+  .log-clear-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(224, 224, 224, 0.7);
+  }
+
+  /* ═══════════════════════════════════════ */
+  /*  Updater Tab Styles                    */
+  /* ═══════════════════════════════════════ */
+
+  .updater-state { display: none; }
+  .updater-state.active { display: flex; flex-direction: column; flex: 1; gap: 20px; }
+
+  /* No update state */
+  .no-update {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .no-update-icon {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(57, 255, 20, 0.06);
+    border: 1px solid rgba(57, 255, 20, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .no-update-text {
+    font-size: 13px;
+    color: rgba(224, 224, 224, 0.5);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .no-update-version {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: rgba(57, 255, 20, 0.5);
+  }
+
+  .check-btn {
+    padding: 10px 28px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    color: #00f0ff;
+    margin-top: 4px;
+  }
+  .check-btn:hover {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.1);
+  }
+  .check-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* Update available state */
+  .update-header {
+    text-align: center;
+  }
+
+  .update-icon {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(0, 240, 255, 0); }
+    50%      { box-shadow: 0 0 20px rgba(0, 240, 255, 0.15); }
+  }
+
+  .update-icon svg {
+    width: 22px; height: 22px;
+    stroke: #00f0ff;
+    stroke-width: 2;
+    fill: none;
+  }
+
+  .update-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e8e8e8;
+    margin-bottom: 4px;
+  }
+
+  .update-subtitle {
+    font-size: 12px;
+    color: rgba(224, 224, 224, 0.45);
+  }
+
+  /* Version badges */
+  .versions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .ver-badge {
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "Cascadia Code", monospace;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .ver-current {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(224, 224, 224, 0.5);
+  }
+
+  .ver-arrow {
+    color: rgba(0, 240, 255, 0.5);
+    font-size: 14px;
+  }
+
+  .ver-new {
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    color: #00f0ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  }
+
+  /* Changelog */
+  .changelog-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: center;
+    padding: 5px 14px;
+    border: 1px solid rgba(0, 240, 255, 0.12);
+    border-radius: 6px;
+    background: rgba(0, 240, 255, 0.04);
+    color: rgba(0, 240, 255, 0.7);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .changelog-btn:hover {
+    background: rgba(0, 240, 255, 0.1);
+    border-color: rgba(0, 240, 255, 0.3);
+    color: #00f0ff;
+  }
+  .changelog-btn .arrow {
+    transition: transform 0.2s;
+    font-size: 10px;
+  }
+  .changelog-btn.open .arrow {
+    transform: rotate(180deg);
+  }
+
+  .changelog {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s;
+    opacity: 0;
+  }
+  .changelog.open {
+    max-height: 160px;
+    opacity: 1;
+    overflow-y: auto;
+  }
+  .changelog::-webkit-scrollbar { width: 4px; }
+  .changelog::-webkit-scrollbar-track { background: transparent; }
+  .changelog::-webkit-scrollbar-thumb {
+    background: rgba(0, 240, 255, 0.15);
+    border-radius: 2px;
+  }
+
+  .changelog-inner {
+    margin-top: 8px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    text-align: left;
+    font-size: 11px;
+    line-height: 1.7;
+    color: rgba(224, 224, 224, 0.65);
+  }
+  .changelog-inner h1, .changelog-inner h2, .changelog-inner h3 {
+    color: #00f0ff; font-size: 12px; font-weight: 600; margin: 8px 0 2px;
+  }
+  .changelog-inner h1:first-child,
+  .changelog-inner h2:first-child,
+  .changelog-inner h3:first-child { margin-top: 0; }
+  .changelog-inner ul { list-style: none; padding: 0; }
+  .changelog-inner li { padding-left: 14px; position: relative; margin: 2px 0; }
+  .changelog-inner li::before {
+    content: "\203A"; position: absolute; left: 4px;
+    color: rgba(0, 240, 255, 0.5); font-weight: bold;
+  }
+  .changelog-inner code {
+    background: rgba(0, 240, 255, 0.08); padding: 1px 4px; border-radius: 3px;
+    font-family: "JetBrains Mono", monospace; font-size: 10px; color: #00f0ff;
+  }
+  .changelog-inner strong { color: #e0e0e0; font-weight: 600; }
+  .changelog-inner p { margin: 3px 0; }
+
+  /* Progress */
+  .progress-section {
+    display: none;
+    margin-top: 8px;
+  }
+  .progress-section.visible { display: block; }
+
+  .progress-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00d4ff, #00f0ff);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    position: relative;
+  }
+  .progress-fill::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 10px;
+    color: rgba(224, 224, 224, 0.4);
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  .update-status {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(0, 240, 255, 0.6);
+    display: none;
+    margin-top: 4px;
+  }
+  .update-status.visible { display: block; }
+  .update-status.error { color: rgba(255, 7, 58, 0.8); }
+
+  .update-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 12px;
+  }
+
+  .upd-btn {
+    flex: 1;
+    padding: 10px 0;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    text-align: center;
+  }
+  .upd-btn-primary {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.12), rgba(0, 240, 255, 0.04));
+    border-color: rgba(0, 240, 255, 0.25);
+    color: #00f0ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+  }
+  .upd-btn-primary:hover {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(0, 240, 255, 0.08));
+    border-color: rgba(0, 240, 255, 0.45);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+  }
+  .upd-btn-primary:disabled {
+    opacity: 0.4; cursor: not-allowed; box-shadow: none;
+  }
+  .upd-btn-restart {
+    background: linear-gradient(135deg, rgba(57, 255, 20, 0.15), rgba(57, 255, 20, 0.06));
+    border-color: rgba(57, 255, 20, 0.3);
+    color: #39ff14;
+    text-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+  }
+  .upd-btn-restart:hover {
+    background: linear-gradient(135deg, rgba(57, 255, 20, 0.25), rgba(57, 255, 20, 0.12));
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.15);
+  }
+</style>
+</head>
+<body>
+
+<!-- Titlebar -->
+<div class="titlebar">
+  <div class="titlebar-left">
+    <div class="titlebar-dot"></div>
+    SpecterMonitor
+  </div>
+  <div class="titlebar-controls">
+    <button class="tb-btn" onclick="api.minimize()" title="Minimieren">&#x2500;</button>
+    <button class="tb-btn tb-btn-close" onclick="api.close()" title="In Tray minimieren">&#x2715;</button>
+  </div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('services')" id="tabBtnServices">Services</button>
+  <button class="tab-btn" onclick="switchTab('updater')" id="tabBtnUpdater">Updater<span class="tab-badge" id="updateBadge"></span></button>
+  <button class="tab-btn" onclick="switchTab('logs')" id="tabBtnLogs">Logs</button>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- ═══ TAB: Services ═══ -->
+  <div class="tab-panel active" id="panelServices">
+
+    <!-- Header -->
+    <div class="header">
+      <h1><span>Specter</span>Monitor</h1>
+      <div class="sub">Control Center</div>
+    </div>
+
+    <!-- Service Cards -->
+    <div class="services">
+      <!-- Server -->
+      <div class="svc-card">
+        <div class="svc-dot offline" id="dotServer"></div>
+        <div class="svc-info">
+          <div class="svc-name">Server</div>
+          <div class="svc-detail">localhost:8765</div>
+        </div>
+        <span class="svc-status offline" id="statusServer">Offline</span>
+        <button class="svc-btn svc-btn-start" id="btnServer" onclick="toggleServer()">Starten</button>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="svc-card">
+        <div class="svc-dot offline" id="dotDashboard"></div>
+        <div class="svc-info">
+          <div class="svc-name">Dashboard</div>
+          <div class="svc-detail">localhost:3000</div>
+        </div>
+        <span class="svc-status offline" id="statusDashboard">Offline</span>
+        <button class="svc-btn svc-btn-start" id="btnDashboard" onclick="toggleDashboard()">Starten</button>
+      </div>
+
+      <!-- Client -->
+      <div class="svc-card">
+        <div class="svc-dot offline" id="dotClient"></div>
+        <div class="svc-info">
+          <div class="svc-name">Client Agent</div>
+          <div class="svc-detail">Auto-Discovery UDP</div>
+        </div>
+        <span class="svc-status offline" id="statusClient">Gestoppt</span>
+        <button class="svc-btn svc-btn-start" id="btnClient" onclick="toggleClient()">Starten</button>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="act-btn act-btn-primary" id="btnStartAll" onclick="api.startAll()">Server + Dashboard starten</button>
+      <button class="act-btn act-btn-secondary" id="btnOpenDashboard" onclick="api.openDashboard()" disabled>Dashboard &#xF6;ffnen</button>
+    </div>
+
+  </div>
+
+  <!-- ═══ TAB: Updater ═══ -->
+  <div class="tab-panel" id="panelUpdater">
+
+    <!-- State: No update / checking -->
+    <div class="updater-state active" id="updaterNoUpdate">
+      <div class="no-update">
+        <div class="no-update-icon">&#x2714;</div>
+        <div class="no-update-text">Keine Updates verfügbar</div>
+        <div class="no-update-version" id="currentVersionText"></div>
+        <button class="check-btn" id="btnCheckUpdate" onclick="checkForUpdate()">Auf Updates pr&#xFC;fen</button>
+      </div>
+    </div>
+
+    <!-- State: Update available -->
+    <div class="updater-state" id="updaterAvailable">
+      <div class="update-header">
+        <div class="update-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="update-title">Update verf&#xFC;gbar!</div>
+        <div class="update-subtitle" id="updateReleaseName"></div>
+      </div>
+
+      <div class="versions">
+        <span class="ver-badge ver-current" id="verCurrent">v-.-.-</span>
+        <span class="ver-arrow">&#x2192;</span>
+        <span class="ver-badge ver-new" id="verNew">v-.-.-</span>
+      </div>
+
+      <button class="changelog-btn" id="changelogBtn" onclick="toggleChangelog()">
+        Was ist neu? <span class="arrow">&#x25BC;</span>
+      </button>
+      <div class="changelog" id="changelog">
+        <div class="changelog-inner" id="changelogContent">Lade Release-Notes...</div>
+      </div>
+
+      <div class="progress-section" id="progressSection">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-info">
+          <span id="progressPercent">0%</span>
+          <span id="progressSpeed"></span>
+        </div>
+      </div>
+
+      <p class="update-status" id="updateStatusText"></p>
+
+      <div class="update-actions" id="updateActions">
+        <button class="upd-btn upd-btn-primary" id="btnUpdate" onclick="onStartDownload()">Jetzt aktualisieren</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ TAB: Logs ═══ -->
+  <div class="tab-panel" id="panelLogs">
+    <div class="log-area" id="logArea">
+      <p class="log-line info">Bereit.</p>
+    </div>
+    <button class="log-clear-btn" onclick="clearLogs()">Logs leeren</button>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <span id="footerVersion">v1.0.0</span>
+  <span class="ip" id="footerIp"></span>
+</div>
+
+<script>
+  const api = window.launcherAPI;
+
+  let state = {
+    server:    { running: false, managed: false },
+    dashboard: { running: false, managed: false },
+    client:    { running: false, managed: false },
+  };
+
+  let updateInfo = null;
+  let releaseUrl = "";
+  let downloadedFilePath = null;
+
+  // ── Tab Switching ─────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tabBtn' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+    document.getElementById('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+  }
+
+  // ── Logging ─────────────────────────────
+  function log(msg, type = '') {
+    const area = document.getElementById('logArea');
+    const p = document.createElement('p');
+    p.className = 'log-line' + (type ? ' ' + type : '');
+    const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    p.textContent = '[' + time + '] ' + msg;
+    area.appendChild(p);
+    area.scrollTop = area.scrollHeight;
+    while (area.children.length > 200) area.removeChild(area.firstChild);
+  }
+
+  function clearLogs() {
+    const area = document.getElementById('logArea');
+    area.innerHTML = '';
+    log('Logs geleert.', 'info');
+  }
+
+  // ── Update UI from state ────────────────
+  function updateUI() {
+    updateCard('Server',    state.server);
+    updateCard('Dashboard', state.dashboard);
+    updateCard('Client',    state.client);
+
+    const dashOnline = state.dashboard.running;
+    document.getElementById('btnOpenDashboard').disabled = !dashOnline;
+
+    const anyRunning = state.server.running || state.dashboard.running;
+    const btn = document.getElementById('btnStartAll');
+    if (anyRunning) {
+      btn.textContent = 'Alles stoppen';
+      btn.onclick = () => api.stopAll();
+    } else {
+      btn.textContent = 'Server + Dashboard starten';
+      btn.onclick = () => api.startAll();
+    }
+  }
+
+  function updateCard(name, svc) {
+    const dot    = document.getElementById('dot' + name);
+    const status = document.getElementById('status' + name);
+    const btn    = document.getElementById('btn' + name);
+
+    if (svc.starting) {
+      dot.className    = 'svc-dot starting';
+      status.className = 'svc-status starting';
+      status.textContent = 'Startet...';
+      btn.disabled = true;
+      btn.textContent = 'Startet...';
+    } else if (svc.running) {
+      dot.className    = 'svc-dot online';
+      status.className = 'svc-status online';
+      status.textContent = 'Online';
+      btn.className = 'svc-btn svc-btn-stop';
+      btn.disabled  = false;
+      btn.textContent = 'Stoppen';
+    } else {
+      dot.className    = 'svc-dot offline';
+      status.className = 'svc-status offline';
+      status.textContent = name === 'Client' ? 'Gestoppt' : 'Offline';
+      btn.className = 'svc-btn svc-btn-start';
+      btn.disabled  = false;
+      btn.textContent = 'Starten';
+    }
+  }
+
+  // ── Toggle buttons ──────────────────────
+  function toggleServer() {
+    state.server.running ? api.stopServer() : api.startServer();
+  }
+  function toggleDashboard() {
+    state.dashboard.running ? api.stopDashboard() : api.startDashboard();
+  }
+  function toggleClient() {
+    state.client.running ? api.stopClient() : api.startClient();
+  }
+
+  // ── Updater Logic ───────────────────────
+  function showUpdaterState(id) {
+    document.querySelectorAll('.updater-state').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function checkForUpdate() {
+    const btn = document.getElementById('btnCheckUpdate');
+    btn.disabled = true;
+    btn.textContent = 'Wird gepr\u00FCft...';
+    api.checkForUpdate();
+    // Re-enable after timeout in case no response
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = 'Auf Updates pr\u00FCfen';
+    }, 10000);
+  }
+
+  function renderMd(md) {
+    if (!md) return '<p style="opacity:0.4">Keine Details verf\u00FCgbar.</p>';
+    let html = md
+      .split("\n")
+      .map((line) => {
+        if (line.startsWith("### ")) return "<h3>" + line.slice(4) + "</h3>";
+        if (line.startsWith("## "))  return "<h2>" + line.slice(3) + "</h2>";
+        if (line.startsWith("# "))   return "<h1>" + line.slice(2) + "</h1>";
+        if (/^[-*] /.test(line))     return "<li>" + line.slice(2) + "</li>";
+        if (!line.trim())            return "";
+        return "<p>" + line + "</p>";
+      })
+      .join("\n");
+    html = html
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/`(.+?)`/g, "<code>$1</code>");
+    html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
+    return html;
+  }
+
+  function toggleChangelog() {
+    const cl = document.getElementById("changelog");
+    const btn = document.getElementById("changelogBtn");
+    cl.classList.toggle("open");
+    btn.classList.toggle("open");
+  }
+
+  function onStartDownload() {
+    const btn = document.getElementById("btnUpdate");
+    btn.disabled = true;
+    btn.textContent = "Download l\u00E4uft...";
+    document.getElementById("progressSection").classList.add("visible");
+    api.startDownload();
+  }
+
+  function onInstallNow() {
+    if (downloadedFilePath) {
+      api.installNow(downloadedFilePath);
+    }
+  }
+
+  function onOpenFolder() {
+    if (downloadedFilePath) {
+      api.openFolder(downloadedFilePath);
+    }
+  }
+
+  function fmtBytes(b) {
+    if (b < 1024) return b + " B";
+    if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
+    return (b / 1048576).toFixed(1) + " MB";
+  }
+
+  // ── IPC Listeners ───────────────────────
+  api.onStatusUpdate((s) => {
+    state = s;
+    updateUI();
+  });
+
+  api.onLog((msg, type) => {
+    log(msg, type);
+  });
+
+  api.onLanIp((ip) => {
+    document.getElementById('footerIp').textContent = ip;
+  });
+
+  api.onUpdateInfo((info) => {
+    updateInfo = info;
+    releaseUrl = info.releaseUrl;
+    document.getElementById("verCurrent").textContent = "v" + info.currentVersion;
+    document.getElementById("verNew").textContent = "v" + info.latestVersion;
+    document.getElementById("updateReleaseName").textContent = info.releaseName;
+    document.getElementById("changelogContent").innerHTML = renderMd(info.releaseNotes);
+    showUpdaterState("updaterAvailable");
+    // Show badge on tab
+    document.getElementById("updateBadge").classList.add("visible");
+    // Reset button state
+    const btn = document.getElementById("btnCheckUpdate");
+    btn.disabled = false;
+    btn.textContent = 'Auf Updates pr\u00FCfen';
+  });
+
+  api.onNoUpdate(() => {
+    showUpdaterState("updaterNoUpdate");
+    const btn = document.getElementById("btnCheckUpdate");
+    btn.disabled = false;
+    btn.textContent = 'Auf Updates pr\u00FCfen';
+  });
+
+  api.onDownloadProgress((p) => {
+    document.getElementById("progressFill").style.width = p.percent + "%";
+    document.getElementById("progressPercent").textContent = p.percent + "%";
+    document.getElementById("progressSpeed").textContent = fmtBytes(p.bytesPerSecond) + "/s";
+  });
+
+  api.onUpdateDownloaded((filePath) => {
+    downloadedFilePath = filePath;
+    document.getElementById("progressFill").style.width = "100%";
+    document.getElementById("progressPercent").textContent = "100%";
+    const st = document.getElementById("updateStatusText");
+    st.textContent = "Download abgeschlossen! Update wird vorbereitet...";
+    st.classList.add("visible");
+    document.getElementById("updateActions").innerHTML =
+      '<p style="color:#aaa;font-size:13px">Bitte warte, das Update wird gleich angewendet...</p>';
+  });
+
+  api.onUpdateInstalling(() => {
+    const st = document.getElementById("updateStatusText");
+    st.textContent = "Update wird angewendet... Die App startet gleich neu.";
+    st.classList.add("visible");
+    st.classList.remove("error");
+    document.getElementById("updateActions").innerHTML =
+      '<p style="color:#7ee787;font-size:13px">&#x23F3; Update wird angewendet \u2013 bitte warten...</p>';
+  });
+
+  api.onAutoUpdateStarted(() => {
+    // Auto-update detected on startup – switch to update tab and show progress
+    showUpdaterState("updaterAvailable");
+    document.getElementById("updateBadge").classList.add("visible");
+    switchTab("updater");
+    // Auto-start the progress display
+    const btn = document.getElementById("btnUpdate");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Download l\u00E4uft...";
+    }
+    document.getElementById("progressSection").classList.add("visible");
+  });
+
+  api.onAutoUpdateInstalling(() => {
+    const st = document.getElementById("updateStatusText");
+    st.textContent = "Update wird angewendet... Die App startet gleich neu.";
+    st.classList.add("visible");
+    st.classList.remove("error");
+    document.getElementById("updateActions").innerHTML =
+      '<p style="color:#7ee787;font-size:13px">&#x23F3; Bitte warten \u2013 das Update wird installiert...</p>';
+  });
+
+  api.onUpdateError((msg) => {
+    const st = document.getElementById("updateStatusText");
+    st.textContent = msg;
+    st.classList.add("visible", "error");
+    const btn = document.getElementById("btnUpdate");
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Erneut versuchen";
+    }
+  });
+
+  // Initial UI
+  updateUI();
+  document.getElementById('currentVersionText').textContent = 'Du nutzt die aktuelle Version';
+</script>
+
+</body>
+</html>
