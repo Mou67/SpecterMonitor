@@ -16,6 +16,7 @@
   <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Electron-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" />
   <img src="https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind" />
   <img src="https://img.shields.io/badge/WebSocket-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="WebSocket" />
@@ -119,9 +120,9 @@ Click the RAM card for the physical memory view:
 | 📃 | **Wake-on-LAN** | Wake PCs on the network from the dashboard — magic packet with one click. |
 | 📃 | **Authentication** | Login system with password protection so not everyone on the network can access the dashboard. |
 | 📃 | **Mobile Layout** | Responsive display for smartphones and tablets with touch-optimized gestures. |
-| 🛠️ | **SpecterMonitor Control Service** | An Windows App build with Electron to manage the application / start Server + Dashboard + Client / all in one |
+| ✅ | **SpecterMonitor Control Service** | Windows Desktop App built with Electron — manages Server, Dashboard & Client all in one with auto-updater |
 
-> 🛠️ = In Work | 📃 = Planned
+> ✅ = Released | 🛠️ = In Work | 📃 = Planned
 
 <br/>
 
@@ -131,64 +132,64 @@ Click the RAM card for the physical memory view:
 
 ## Installation & Setup
 
-### Prerequisites
+### Desktop App (Recommended)
 
-- **Python** 3.10+
-- **Node.js** 18+
-- **Windows** recommended (for WMI sensor queries), Linux works with a reduced feature set
+Download the installer — that's it. No Python, no Node.js, no manual setup required.
 
-### 1. Start the Server
+1. Go to [**Releases**](https://github.com/Mou67/SpecterMonitor/releases/latest)
+2. Download `SpecterMonitor Setup x.x.x.exe`
+3. Run the installer
+4. Launch SpecterMonitor from the desktop shortcut
+
+The app manages everything automatically (server, dashboard, updates). Future updates are installed automatically in the background.
+
+<br/>
+
+### Connect Remote PCs
+
+On each additional PC you want to monitor, run the lightweight Python agent:
 
 ```bash
-cd server
-
-# Install dependencies
+cd client
 pip install -r requirements.txt
-
-# Start server (listens on 0.0.0.0:8765)
-python main.py
+python agent.py
 ```
 
-### 2. Start the Dashboard
-
-```bash
-cd dashboard
-
-# Install dependencies
-npm install
-
-# Start dev server (listens on 0.0.0.0:3000)
-npm run dev
-```
-
-### 3. Open the Dashboard
-
-```
-http://localhost:3000
-```
+The agent auto-discovers the server on your network and starts streaming metrics immediately.
 
 <br/>
 
 ### Access from your entire home network
 
-The dashboard is already configured to listen on **all network interfaces** (`0.0.0.0`). Accessible from any device on the same network:
+The dashboard listens on **all network interfaces** (`0.0.0.0:3000`). Accessible from any device on the same network:
 
 ```
 http://<host-pc-ip>:3000
 ```
 
-> **Tip:** The IP is displayed in the console when the server starts.
+<br/>
 
-### Connect Remote PCs
+---
 
-On each additional PC in your network:
+### Developer Setup (Manual)
+
+> Only needed if you want to run from source or contribute.
+
+**Prerequisites:** Python 3.10+, Node.js 18+, Windows recommended
 
 ```bash
-cd client
-python agent.py
+# Server
+cd server
+pip install -r requirements.txt
+python main.py
+
+# Dashboard (separate terminal)
+cd dashboard
+npm install
+npm run dev
 ```
 
-The agent automatically connects to the server and streams its metrics.
+Open `http://localhost:3000`
 
 <br/>
 
