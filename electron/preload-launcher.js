@@ -48,4 +48,14 @@ contextBridge.exposeInMainWorld("launcherAPI", {
     ipcRenderer.on("auto-update-started", () => cb()),
   onAutoUpdateInstalling: (cb) =>
     ipcRenderer.on("auto-update-installing", () => cb()),
+
+  // Setup
+  checkDeps: () => ipcRenderer.invoke("check-deps"),
+  runSetup: () => ipcRenderer.send("run-setup"),
+  setupFirewall: () => ipcRenderer.send("setup-firewall"),
+  onSetupLog: (cb) => ipcRenderer.on("setup-log", (_e, msg, type) => cb(msg, type)),
+  onSetupStep: (cb) => ipcRenderer.on("setup-step", (_e, step, status) => cb(step, status)),
+  onSetupStarted: (cb) => ipcRenderer.on("setup-started", () => cb()),
+  onSetupDone: (cb) => ipcRenderer.on("setup-done", (_e, success) => cb(success)),
+  onFirewallDone: (cb) => ipcRenderer.on("firewall-done", () => cb()),
 });

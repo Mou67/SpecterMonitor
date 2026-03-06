@@ -5,6 +5,7 @@ __pycache__/
 .env
 .env.local
 dist/
+dist-electron/
 build/
 out/
 *.egg-info/
@@ -15,4 +16,5 @@ Thumbs.db
 *.log
 *.exe
 *.msi
+*.zip
 package-lock.json

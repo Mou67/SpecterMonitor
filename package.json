@@ -1,6 +1,6 @@
 {
   "name": "spectermonitor-desktop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "SpecterMonitor Desktop – Real-time hardware monitoring",
   "main": "electron/main.js",
   "scripts": {
@@ -39,7 +39,7 @@
       {
         "from": "dashboard",
         "to": "dashboard",
-        "filter": ["**/*", "!node_modules/**", "!.next/**"]
+        "filter": ["**/*", "!node_modules/**", "!.next/cache/**"]
       },
       "VERSION",
       "CHANGELOG.md"

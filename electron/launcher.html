@@ -727,6 +727,56 @@
     background: linear-gradient(135deg, rgba(57, 255, 20, 0.25), rgba(57, 255, 20, 0.12));
     box-shadow: 0 0 20px rgba(57, 255, 20, 0.15);
   }
+
+  /* ═══════════════════════════════════════ */
+  /*  Setup Tab Styles                      */
+  /* ═══════════════════════════════════════ */
+  .setup-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .setup-step {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: rgba(15, 15, 30, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+
+  .step-icon {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: bold;
+    flex-shrink: 0;
+  }
+  .step-icon.unknown { color: rgba(255,255,255,0.2); }
+  .step-icon.running { color: #ff6a00; animation: dot-pulse 1s ease-in-out infinite; }
+  .step-icon.ok      { color: #39ff14; text-shadow: 0 0 8px rgba(57,255,20,0.5); }
+  .step-icon.error   { color: #ff073a; }
+  .step-icon.missing { color: rgba(255,106,0,0.8); }
+  .step-icon.blocked { color: rgba(255,255,255,0.12); }
+
+  .step-info { flex: 1; margin-left: 12px; }
+  .step-name { font-size: 12px; font-weight: 500; color: #e0e0e0; }
+  .step-detail {
+    font-size: 10px; color: rgba(224,224,224,0.3); margin-top: 1px;
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  .step-status {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px; font-weight: 500; margin-left: 10px; flex-shrink: 0;
+  }
+  .step-status.ok      { color: #39ff14; }
+  .step-status.error   { color: #ff073a; }
+  .step-status.running { color: #ff6a00; }
+  .step-status.missing { color: rgba(255,106,0,0.8); }
+  .step-status.blocked { color: rgba(255,255,255,0.2); }
+  .step-status.unknown { color: rgba(255,255,255,0.2); }
 </style>
 </head>
 <body>
@@ -746,6 +796,7 @@
 <!-- Tab Bar -->
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('services')" id="tabBtnServices">Services</button>
+  <button class="tab-btn" onclick="switchTab('setup')" id="tabBtnSetup">Setup</button>
   <button class="tab-btn" onclick="switchTab('updater')" id="tabBtnUpdater">Updater<span class="tab-badge" id="updateBadge"></span></button>
   <button class="tab-btn" onclick="switchTab('logs')" id="tabBtnLogs">Logs</button>
 </div>
@@ -802,6 +853,69 @@
     <div class="actions">
       <button class="act-btn act-btn-primary" id="btnStartAll" onclick="api.startAll()">Server + Dashboard starten</button>
       <button class="act-btn act-btn-secondary" id="btnOpenDashboard" onclick="api.openDashboard()" disabled>Dashboard &#xF6;ffnen</button>
+    </div>
+
+  </div>
+
+  <!-- ═══ TAB: Setup ═══ -->
+  <div class="tab-panel" id="panelSetup">
+
+    <div class="header">
+      <h1><span>Setup</span></h1>
+      <div class="sub">Ersteinrichtung &amp; Abh&#xE4;ngigkeiten</div>
+    </div>
+
+    <div class="setup-steps">
+      <div class="setup-step">
+        <div class="step-icon unknown" id="siPython">?</div>
+        <div class="step-info">
+          <div class="step-name">Python</div>
+          <div class="step-detail">python.exe</div>
+        </div>
+        <span class="step-status unknown" id="ssPython">&#x2014;</span>
+      </div>
+      <div class="setup-step">
+        <div class="step-icon unknown" id="siServerDeps">?</div>
+        <div class="step-info">
+          <div class="step-name">Server-Pakete</div>
+          <div class="step-detail">fastapi, uvicorn, psutil</div>
+        </div>
+        <span class="step-status unknown" id="ssServerDeps">&#x2014;</span>
+      </div>
+      <div class="setup-step">
+        <div class="step-icon unknown" id="siClientDeps">?</div>
+        <div class="step-info">
+          <div class="step-name">Client-Pakete</div>
+          <div class="step-detail">psutil, websockets</div>
+        </div>
+        <span class="step-status unknown" id="ssClientDeps">&#x2014;</span>
+      </div>
+      <div class="setup-step">
+        <div class="step-icon unknown" id="siNodeModules">?</div>
+        <div class="step-info">
+          <div class="step-name">Node Modules</div>
+          <div class="step-detail">dashboard/node_modules</div>
+        </div>
+        <span class="step-status unknown" id="ssNodeModules">&#x2014;</span>
+      </div>
+      <div class="setup-step">
+        <div class="step-icon unknown" id="siDashboardBuild">?</div>
+        <div class="step-info">
+          <div class="step-name">Dashboard Build</div>
+          <div class="step-detail">dashboard/.next</div>
+        </div>
+        <span class="step-status unknown" id="ssDashboardBuild">&#x2014;</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="act-btn act-btn-secondary" onclick="checkDepsUI()" id="btnCheckDeps">Pr&#xFC;fen</button>
+      <button class="act-btn act-btn-primary" onclick="api.runSetup()" id="btnRunSetup">Setup starten</button>
+    </div>
+    <button class="act-btn act-btn-secondary" onclick="api.setupFirewall()" style="width:100%">Firewall konfigurieren</button>
+
+    <div class="log-area" id="setupLogArea">
+      <p class="log-line info">Klicke "Pr&#xFC;fen" um den Status anzuzeigen.</p>
     </div>
 
   </div>
@@ -1142,6 +1256,60 @@
       btn.textContent = "Erneut versuchen";
     }
   });
+
+  // ── Setup Tab ──────────────────────────
+  const stepKeys = ['python', 'serverDeps', 'clientDeps', 'nodeModules', 'dashboardBuild'];
+  const stepIconIds = { python: 'siPython', serverDeps: 'siServerDeps', clientDeps: 'siClientDeps', nodeModules: 'siNodeModules', dashboardBuild: 'siDashboardBuild' };
+  const stepStatusIds = { python: 'ssPython', serverDeps: 'ssServerDeps', clientDeps: 'ssClientDeps', nodeModules: 'ssNodeModules', dashboardBuild: 'ssDashboardBuild' };
+  const statusLabels = { ok: 'OK', missing: 'Fehlt', blocked: 'Blockiert', error: 'Fehler', running: 'L\u00E4uft\u2026', unknown: '\u2014' };
+  const statusIcons  = { ok: '\u2713', missing: '\u2717', blocked: '\u25CB', error: '\u2717', running: '\u25CF', unknown: '?' };
+
+  function updateStepUI(key, status) {
+    const iconEl   = document.getElementById(stepIconIds[key]);
+    const statusEl = document.getElementById(stepStatusIds[key]);
+    if (iconEl)   { iconEl.className = 'step-icon ' + status;   iconEl.textContent   = statusIcons[status]  || '?'; }
+    if (statusEl) { statusEl.className = 'step-status ' + status; statusEl.textContent = statusLabels[status] || status; }
+  }
+
+  function setupLog(msg, type) {
+    const area = document.getElementById('setupLogArea');
+    const p = document.createElement('p');
+    p.className = 'log-line' + (type ? ' ' + type : '');
+    const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    p.textContent = '[' + time + '] ' + msg;
+    area.appendChild(p);
+    area.scrollTop = area.scrollHeight;
+    while (area.children.length > 300) area.removeChild(area.firstChild);
+  }
+
+  async function checkDepsUI() {
+    const btn = document.getElementById('btnCheckDeps');
+    btn.disabled = true;
+    btn.textContent = 'Pr\u00FCfe\u2026';
+    setupLog('Überprüfe Abhängigkeiten…', 'info');
+    try {
+      const deps = await api.checkDeps();
+      for (const key of stepKeys) updateStepUI(key, deps[key] || 'unknown');
+      setupLog('Überprüfung abgeschlossen.', 'ok');
+    } catch (err) {
+      setupLog('Fehler: ' + err.message, 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Pr\u00FCfen';
+  }
+
+  api.onSetupLog((msg, type) => setupLog(msg, type));
+  api.onSetupStep((step, status) => updateStepUI(step, status));
+  api.onSetupStarted(() => {
+    const btn = document.getElementById('btnRunSetup');
+    if (btn) { btn.disabled = true; btn.textContent = 'L\u00E4uft\u2026'; }
+  });
+  api.onSetupDone((success) => {
+    const btn = document.getElementById('btnRunSetup');
+    if (btn) { btn.disabled = false; btn.textContent = 'Setup starten'; }
+    if (success) checkDepsUI();
+  });
+  api.onFirewallDone(() => setupLog('Firewall konfiguriert.', 'ok'));
 
   // Initial UI
   updateUI();

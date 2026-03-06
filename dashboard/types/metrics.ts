@@ -158,3 +158,26 @@ export interface RamDetailMetrics {
   paged_pool_mb: number | null;
   non_paged_pool_mb: number | null;
 }
+
+export interface GpuDetailMetrics {
+  index: number;
+  name: string;
+  uuid: string | null;
+  driver_version: string | null;
+
+  // Specs (mostly static)
+  memory_total_mb: number;
+  pcie_gen: number | null;
+  pcie_width: number | null;
+
+  // Live
+  load_percent: number;
+  memory_used_mb: number;
+  memory_percent: number;
+  temperature: number | null;
+  fan_speed_percent: number | null;
+  power_draw_watts: number | null;
+  power_limit_watts: number | null;
+  gpu_clock_mhz: number | null;
+  memory_clock_mhz: number | null;
+}

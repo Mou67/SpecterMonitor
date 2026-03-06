@@ -155,6 +155,29 @@ class RamDetailMetrics(BaseModel):
     non_paged_pool_mb: Optional[float] = None
 
 
+class GpuDetailMetrics(BaseModel):
+    index: int
+    name: str
+    uuid: Optional[str] = None
+    driver_version: Optional[str] = None
+
+    # Specs (mostly static)
+    memory_total_mb: float
+    pcie_gen: Optional[int] = None
+    pcie_width: Optional[int] = None
+
+    # Live
+    load_percent: float
+    memory_used_mb: float
+    memory_percent: float
+    temperature: Optional[float] = None
+    fan_speed_percent: Optional[float] = None
+    power_draw_watts: Optional[float] = None
+    power_limit_watts: Optional[float] = None
+    gpu_clock_mhz: Optional[int] = None
+    memory_clock_mhz: Optional[int] = None
+
+
 class KillRequest(BaseModel):
     hostname: str
     pid: int

@@ -14,6 +14,7 @@ import MetricChart from "./MetricChart";
 import ProcessTable from "./ProcessTable";
 import CpuDetailOverlay from "./CpuDetailOverlay";
 import RamDetailOverlay from "./RamDetailOverlay";
+import GpuDetailOverlay from "./GpuDetailOverlay";
 
 interface HostDetailProps {
   data: HostSnapshot;
@@ -88,6 +89,7 @@ export default function HostDetail({ data, onKill }: HostDetailProps) {
 function OverviewTab({ data }: { data: HostSnapshot }) {
   const [cpuDetailOpen, setCpuDetailOpen] = useState(false);
   const [ramDetailOpen, setRamDetailOpen] = useState(false);
+  const [gpuDetailOpen, setGpuDetailOpen] = useState(false);
 
   return (
     <>
@@ -99,6 +101,13 @@ function OverviewTab({ data }: { data: HostSnapshot }) {
         isOpen={ramDetailOpen}
         onClose={() => setRamDetailOpen(false)}
       />
+      {data.gpu.length > 0 && (
+        <GpuDetailOverlay
+          isOpen={gpuDetailOpen}
+          onClose={() => setGpuDetailOpen(false)}
+          gpuCount={data.gpu.length}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
         <motion.div
@@ -121,7 +130,7 @@ function OverviewTab({ data }: { data: HostSnapshot }) {
           transition={{ delay: 0.1 }}
         >
           {data.gpu.length > 0 ? (
-            <GpuCard gpu={data.gpu[0]} />
+            <GpuCard gpu={data.gpu[0]} onClick={() => setGpuDetailOpen(true)} />
           ) : (
             <div className="glass-card p-6 h-full flex flex-col items-center justify-center text-gray-500">
               <Cpu className="w-10 h-10 mb-3 opacity-30" />

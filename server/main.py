@@ -13,7 +13,7 @@ from typing import Callable, Awaitable
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from monitor import collect_snapshot, kill_process, get_cpu_detail_metrics, get_ram_detail_metrics
+from monitor import collect_snapshot, kill_process, get_cpu_detail_metrics, get_ram_detail_metrics, get_gpu_detail_metrics
 from models import KillRequest, KillResponse
 
 logger = logging.getLogger(__name__)
@@ -156,6 +156,21 @@ async def ws_ram_detail(websocket: WebSocket):
         pass
     except Exception:
         logger.debug("RAM detail WebSocket error", exc_info=True)
+
+
+@app.websocket("/ws/gpu-detail")
+async def ws_gpu_detail(websocket: WebSocket, gpu_index: int = 0):
+    """Stream deep-dive GPU metrics only while the GPU detail overlay is open."""
+    await websocket.accept()
+    try:
+        while True:
+            detail = get_gpu_detail_metrics(gpu_index)
+            await websocket.send_text(json.dumps(detail.model_dump()))
+            await asyncio.sleep(1.0)
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        logger.debug("GPU detail WebSocket error", exc_info=True)
 
 
 _agent_kill_callbacks: dict[str, Callable[[int], Awaitable[tuple[bool, str]]]] = {}

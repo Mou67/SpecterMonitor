@@ -246,8 +246,23 @@ function startDashboard() {
     fileLog(`startDashboard() cannot read dir: ${e.message}`);
   }
 
-  procs.dashboard = spawn("cmd.exe", ["/c", "npm run start"], {
-    cwd: PATHS.dashboard,
+  // Standalone server needs static/ and public/ inside its own directory
+  const standaloneDir = path.join(PATHS.dashboard, ".next", "standalone");
+  const staticSrc  = path.join(PATHS.dashboard, ".next", "static");
+  const staticDest = path.join(standaloneDir, ".next", "static");
+  const publicSrc  = path.join(PATHS.dashboard, "public");
+  const publicDest = path.join(standaloneDir, "public");
+  try {
+    if (fs.existsSync(staticSrc))  fs.cpSync(staticSrc,  staticDest,  { recursive: true, force: true });
+    if (fs.existsSync(publicSrc))  fs.cpSync(publicSrc,  publicDest,  { recursive: true, force: true });
+  } catch (e) {
+    fileLog(`startDashboard() static copy error: ${e.message}`);
+  }
+
+  const standaloneServer = path.join(standaloneDir, "server.js");
+  procs.dashboard = spawn("node", [standaloneServer], {
+    cwd: standaloneDir,
+    env: { ...process.env, PORT: "3000", HOSTNAME: "0.0.0.0" },
     stdio: ["ignore", "pipe", "pipe"],
   });
 
@@ -628,7 +643,7 @@ function applyUpdateAndRestart(extractedDir) {
 
       // Generate a minimal update script
       const script = `@echo off
-timeout /t 3 /nobreak >nul
+timeout /t 8 /nobreak >nul
 xcopy /s /e /y "${sourceDir}\\*" "${appDir}\\"
 start "" "${appExe}"
 rd /s /q "${extractedDir}"
@@ -768,6 +783,220 @@ function downloadRelease(url, destPath) {
     };
     follow(url);
   });
+}
+
+// ═════════════════════════════════════════════════════════════
+//  Setup / Dependency Management
+// ═════════════════════════════════════════════════════════════
+
+let setupRunning = false;
+
+function sendSetupLog(msg, type = "") {
+  if (launcherWindow && !launcherWindow.isDestroyed()) {
+    launcherWindow.webContents.send("setup-log", msg, type);
+  }
+  fileLog(`[Setup] ${msg}`);
+}
+
+function sendSetupStep(step, status) {
+  if (launcherWindow && !launcherWindow.isDestroyed()) {
+    launcherWindow.webContents.send("setup-step", step, status);
+  }
+}
+
+function spawnCmdStep(cmdLine, cwd) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn("cmd.exe", ["/c", cmdLine], {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    proc.stdout?.on("data", (d) => {
+      const line = d.toString().trim();
+      if (line) sendSetupLog(line);
+    });
+    proc.stderr?.on("data", (d) => {
+      const line = d.toString().trim();
+      if (line) sendSetupLog(line, "warn");
+    });
+    proc.on("error", reject);
+    proc.on("exit", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Exit code ${code}`));
+    });
+  });
+}
+
+async function checkDependencies() {
+  const deps = {
+    python: "unknown",
+    serverDeps: "unknown",
+    clientDeps: "unknown",
+    nodeModules: "unknown",
+    dashboardBuild: "unknown",
+  };
+
+  try {
+    execSync("python --version", { stdio: "ignore", shell: true });
+    deps.python = "ok";
+  } catch {
+    deps.python = "missing";
+  }
+
+  if (deps.python === "ok") {
+    try {
+      execSync('python -c "import fastapi, uvicorn, psutil"', {
+        stdio: "ignore", shell: true, cwd: PATHS.server,
+      });
+      deps.serverDeps = "ok";
+    } catch {
+      deps.serverDeps = "missing";
+    }
+  } else {
+    deps.serverDeps = "blocked";
+  }
+
+  if (deps.python === "ok") {
+    try {
+      execSync('python -c "import psutil, websockets"', {
+        stdio: "ignore", shell: true, cwd: PATHS.client,
+      });
+      deps.clientDeps = "ok";
+    } catch {
+      deps.clientDeps = "missing";
+    }
+  } else {
+    deps.clientDeps = "blocked";
+  }
+
+  deps.nodeModules = fs.existsSync(path.join(PATHS.dashboard, "node_modules")) ? "ok" : "missing";
+  deps.dashboardBuild = fs.existsSync(path.join(PATHS.dashboard, ".next", "standalone", "server.js")) ? "ok" : "missing";
+
+  return deps;
+}
+
+async function runSetup() {
+  if (setupRunning) return;
+  setupRunning = true;
+  if (launcherWindow && !launcherWindow.isDestroyed()) {
+    launcherWindow.webContents.send("setup-started");
+  }
+
+  sendSetupLog("=== SpecterMonitor Setup ===", "info");
+
+  try {
+    execSync("python --version", { stdio: "ignore", shell: true });
+    sendSetupLog("Python gefunden.", "ok");
+  } catch {
+    sendSetupLog("Python nicht gefunden! Bitte installieren: https://python.org/", "error");
+    setupRunning = false;
+    if (launcherWindow && !launcherWindow.isDestroyed()) {
+      launcherWindow.webContents.send("setup-done", false);
+    }
+    return;
+  }
+
+  sendSetupStep("serverDeps", "running");
+  sendSetupLog("Installiere Server-Pakete (pip)...", "info");
+  try {
+    await spawnCmdStep("python -m pip install -r requirements.txt", PATHS.server);
+    sendSetupStep("serverDeps", "ok");
+    sendSetupLog("Server-Pakete OK.", "ok");
+  } catch {
+    try {
+      await spawnCmdStep("python -m pip install -r requirements.txt --user", PATHS.server);
+      sendSetupStep("serverDeps", "ok");
+      sendSetupLog("Server-Pakete OK (--user).", "ok");
+    } catch (err) {
+      sendSetupStep("serverDeps", "error");
+      sendSetupLog(`Server-Pakete fehlgeschlagen: ${err.message}`, "error");
+    }
+  }
+
+  sendSetupStep("clientDeps", "running");
+  sendSetupLog("Installiere Client-Pakete (pip)...", "info");
+  try {
+    await spawnCmdStep("python -m pip install -r requirements.txt", PATHS.client);
+    sendSetupStep("clientDeps", "ok");
+    sendSetupLog("Client-Pakete OK.", "ok");
+  } catch {
+    try {
+      await spawnCmdStep("python -m pip install -r requirements.txt --user", PATHS.client);
+      sendSetupStep("clientDeps", "ok");
+      sendSetupLog("Client-Pakete OK (--user).", "ok");
+    } catch (err) {
+      sendSetupStep("clientDeps", "error");
+      sendSetupLog(`Client-Pakete fehlgeschlagen: ${err.message}`, "error");
+    }
+  }
+
+  sendSetupStep("nodeModules", "running");
+  sendSetupLog("npm install (Dashboard)...", "info");
+  try {
+    await spawnCmdStep("npm install", PATHS.dashboard);
+    sendSetupStep("nodeModules", "ok");
+    sendSetupLog("npm install OK.", "ok");
+  } catch (err) {
+    sendSetupStep("nodeModules", "error");
+    sendSetupLog(`npm install fehlgeschlagen: ${err.message}`, "error");
+  }
+
+  sendSetupStep("dashboardBuild", "running");
+  sendSetupLog("npm run build (Dashboard)...", "info");
+  try {
+    await spawnCmdStep("npm run build", PATHS.dashboard);
+    sendSetupStep("dashboardBuild", "ok");
+    sendSetupLog("Dashboard-Build OK.", "ok");
+  } catch (err) {
+    sendSetupStep("dashboardBuild", "error");
+    sendSetupLog(`Dashboard-Build fehlgeschlagen: ${err.message}`, "error");
+  }
+
+  sendSetupLog("=== Setup abgeschlossen ===", "ok");
+  setupRunning = false;
+  if (launcherWindow && !launcherWindow.isDestroyed()) {
+    launcherWindow.webContents.send("setup-done", true);
+  }
+}
+
+function setupFirewall() {
+  sendSetupLog("Konfiguriere Firewall-Regeln (UAC-Prompt)...", "info");
+  const tempDir = app.getPath("temp");
+  const scriptPath = path.join(tempDir, "specter-firewall.ps1");
+  const psContent = `$ErrorActionPreference = 'Stop'
+$rules = @(
+  @{Name='SpecterMonitor - Dashboard (TCP 3000)'; Port=3000; Proto='TCP'},
+  @{Name='SpecterMonitor - Server (TCP 8765)'; Port=8765; Proto='TCP'},
+  @{Name='SpecterMonitor - Beacon (UDP 47761)'; Port=47761; Proto='UDP'}
+)
+foreach ($r in $rules) {
+  $ex = Get-NetFirewallRule -DisplayName $r.Name -ErrorAction SilentlyContinue
+  if ($ex) { Set-NetFirewallRule -DisplayName $r.Name -Profile Any | Out-Null; Write-Host "[OK] $($r.Name)" }
+  else { New-NetFirewallRule -DisplayName $r.Name -Direction Inbound -Protocol $r.Proto -LocalPort $r.Port -Action Allow -Profile Any | Out-Null; Write-Host "[+] $($r.Name)" }
+}
+Write-Host "Fertig."
+`;
+  try {
+    fs.writeFileSync(scriptPath, psContent, { encoding: "utf8" });
+    const proc = spawn("powershell", [
+      "-NoProfile",
+      "-Command",
+      `Start-Process powershell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"' -Verb RunAs -Wait`,
+    ], { stdio: "ignore", windowsHide: true });
+    proc.on("exit", (code) => {
+      try { fs.unlinkSync(scriptPath); } catch {}
+      if (code === 0) {
+        sendSetupLog("Firewall-Regeln konfiguriert.", "ok");
+        if (launcherWindow && !launcherWindow.isDestroyed()) {
+          launcherWindow.webContents.send("firewall-done");
+        }
+      } else {
+        sendSetupLog("Firewall-Konfiguration abgebrochen.", "warn");
+      }
+    });
+    proc.on("error", (err) => sendSetupLog(`Firewall-Fehler: ${err.message}`, "error"));
+  } catch (err) {
+    sendSetupLog(`Firewall-Fehler: ${err.message}`, "error");
+  }
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -936,10 +1165,19 @@ ipcMain.on("update-open-release", (_e, url) => {
   if (url) shell.openExternal(url);
 });
 
+// -- Setup --
+ipcMain.handle("check-deps", async () => checkDependencies());
+ipcMain.on("run-setup", () => runSetup());
+ipcMain.on("setup-firewall", () => setupFirewall());
+
 // ═════════════════════════════════════════════════════════════
 //  Auto-Update: download ZIP + extract + restart
 // ═════════════════════════════════════════════════════════════
 function autoUpdate(info) {
+  if (isDev) {
+    sendLog("Auto-Update übersprungen (Entwicklungsmodus).", "warn");
+    return;
+  }
   pendingUpdateInfo = info;
   sendLog(`Update verfügbar: v${info.latestVersion} – Auto-Update startet...`, "info");
 
@@ -1019,14 +1257,16 @@ app.on("ready", () => {
   statusInterval = setInterval(pollStatus, 3000);
   pollStatus();
 
-  // Check for updates and auto-install if available
-  checkGitHubRelease()
-    .then((info) => {
-      if (info) {
-        autoUpdate(info);
-      }
-    })
-    .catch(() => {});
+  // Check for updates and auto-install if available (packaged builds only)
+  if (!isDev) {
+    checkGitHubRelease()
+      .then((info) => {
+        if (info) {
+          autoUpdate(info);
+        }
+      })
+      .catch(() => {});
+  }
 });
 
 app.on("window-all-closed", () => {

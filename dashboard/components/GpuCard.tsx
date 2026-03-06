@@ -1,23 +1,34 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MemoryStick, Thermometer } from "lucide-react";
+import { MemoryStick, Thermometer, ChevronRight } from "lucide-react";
 import { GpuMetrics } from "@/types/metrics";
 import AnimatedValue from "./AnimatedValue";
 import ProgressRing from "./ProgressRing";
 
 interface GpuCardProps {
   gpu: GpuMetrics;
+  onClick?: () => void;
 }
 
-export default function GpuCard({ gpu }: GpuCardProps) {
+export default function GpuCard({ gpu, onClick }: GpuCardProps) {
   const isCriticalTemp = gpu.temperature != null && gpu.temperature > 85;
 
   return (
-    <div
+    <motion.div
       className={`glass-card p-6 h-full transition-shadow duration-500 ${
         isCriticalTemp ? "animate-glow-red" : ""
-      }`}
+      } ${onClick ? "cursor-pointer" : ""}`}
+      onClick={onClick}
+      whileHover={
+        onClick
+          ? {
+              scale: 1.02,
+              borderColor: "rgba(57, 255, 20, 0.35)",
+            }
+          : undefined
+      }
+      whileTap={onClick ? { scale: 0.98 } : undefined}
     >
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
@@ -32,11 +43,14 @@ export default function GpuCard({ gpu }: GpuCardProps) {
             <p className="text-xs text-gray-500 truncate max-w-[120px]">{gpu.name}</p>
           </div>
         </div>
-        <AnimatedValue
-          value={gpu.load_percent}
-          suffix="%"
-          className="text-2xl font-bold text-white font-mono"
-        />
+        <div className="flex items-center gap-1">
+          <AnimatedValue
+            value={gpu.load_percent}
+            suffix="%"
+            className="text-2xl font-bold text-white font-mono"
+          />
+          {onClick && <ChevronRight className="w-4 h-4 text-gray-500" />}
+        </div>
       </div>
 
       <div className="flex items-center justify-center mb-5">
@@ -89,7 +103,13 @@ export default function GpuCard({ gpu }: GpuCardProps) {
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           />
         </div>
+
+        {onClick && (
+          <p className="text-[10px] text-gray-600 text-center pt-1">
+            Click for details
+          </p>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 }

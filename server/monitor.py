@@ -18,6 +18,12 @@ try:
 except (ImportError, Exception):
     GPU_AVAILABLE = False
 
+try:
+    import pynvml
+    PYNVML_AVAILABLE = True
+except (ImportError, Exception):
+    PYNVML_AVAILABLE = False
+
 _icon_cache: dict[str, str | None] = {}
 _ICON_EXTRACT_AVAILABLE = False
 try:
@@ -51,6 +57,7 @@ from models import (
     RamMetrics, DiskMetrics, NetworkMetrics, ProcessInfo,
     CpuDetailMetrics, CpuCoreDetail,
     RamDetailMetrics, RamSlotInfo,
+    GpuDetailMetrics,
 )
 
 logger = logging.getLogger(__name__)
@@ -393,6 +400,147 @@ def get_gpu_metrics() -> list[GpuMetrics]:
     except Exception:
         logger.debug("Failed to read GPU metrics", exc_info=True)
     return gpus
+
+
+def get_gpu_detail_metrics(index: int = 0) -> GpuDetailMetrics:
+    """Collect deep-dive GPU metrics for the given GPU index.
+
+    Uses pynvml for NVIDIA GPUs (full data: power, fan, clocks, driver, PCIe).
+    Falls back to GPUtil for AMD/Intel (load, VRAM, temperature only).
+    """
+    if PYNVML_AVAILABLE:
+        try:
+            pynvml.nvmlInit()
+            count = pynvml.nvmlDeviceGetCount()
+            if index >= count:
+                index = 0
+            handle = pynvml.nvmlDeviceGetHandleByIndex(index)
+
+            name = pynvml.nvmlDeviceGetName(handle)
+            if isinstance(name, bytes):
+                name = name.decode("utf-8")
+
+            uuid = pynvml.nvmlDeviceGetUUID(handle)
+            if isinstance(uuid, bytes):
+                uuid = uuid.decode("utf-8")
+
+            driver = pynvml.nvmlSystemGetDriverVersion()
+            if isinstance(driver, bytes):
+                driver = driver.decode("utf-8")
+
+            mem_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+            mem_total_mb = round(mem_info.total / (1024 * 1024), 1)
+            mem_used_mb = round(mem_info.used / (1024 * 1024), 1)
+            mem_percent = round(mem_used_mb / mem_total_mb * 100, 1) if mem_total_mb > 0 else 0.0
+
+            util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+            load_percent = float(util.gpu)
+
+            temperature = None
+            try:
+                temperature = float(pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU))
+            except pynvml.NVMLError:
+                pass
+
+            fan_speed = None
+            try:
+                fan_speed = float(pynvml.nvmlDeviceGetFanSpeed(handle))
+            except pynvml.NVMLError:
+                pass
+
+            power_draw = None
+            try:
+                power_draw = round(pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0, 1)
+            except pynvml.NVMLError:
+                pass
+
+            power_limit = None
+            try:
+                power_limit = round(pynvml.nvmlDeviceGetEnforcedPowerLimit(handle) / 1000.0, 1)
+            except pynvml.NVMLError:
+                pass
+
+            gpu_clock = None
+            try:
+                gpu_clock = int(pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_GRAPHICS))
+            except pynvml.NVMLError:
+                pass
+
+            mem_clock = None
+            try:
+                mem_clock = int(pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_MEM))
+            except pynvml.NVMLError:
+                pass
+
+            pcie_gen = None
+            try:
+                pcie_gen = int(pynvml.nvmlDeviceGetMaxPcieLinkGeneration(handle))
+            except pynvml.NVMLError:
+                pass
+
+            pcie_width = None
+            try:
+                pcie_width = int(pynvml.nvmlDeviceGetMaxPcieLinkWidth(handle))
+            except pynvml.NVMLError:
+                pass
+
+            pynvml.nvmlShutdown()
+
+            return GpuDetailMetrics(
+                index=index,
+                name=name,
+                uuid=uuid,
+                driver_version=driver,
+                memory_total_mb=mem_total_mb,
+                pcie_gen=pcie_gen,
+                pcie_width=pcie_width,
+                load_percent=load_percent,
+                memory_used_mb=mem_used_mb,
+                memory_percent=mem_percent,
+                temperature=temperature,
+                fan_speed_percent=fan_speed,
+                power_draw_watts=power_draw,
+                power_limit_watts=power_limit,
+                gpu_clock_mhz=gpu_clock,
+                memory_clock_mhz=mem_clock,
+            )
+
+        except Exception:
+            logger.debug("pynvml GPU detail failed, falling back to GPUtil", exc_info=True)
+            try:
+                pynvml.nvmlShutdown()
+            except Exception:
+                pass
+
+    # GPUtil fallback (AMD / Intel / no pynvml)
+    if GPU_AVAILABLE:
+        try:
+            gpu_list = GPUtil.getGPUs()
+            if gpu_list and index < len(gpu_list):
+                g = gpu_list[index]
+                mem_total = round(g.memoryTotal, 1)
+                mem_used = round(g.memoryUsed, 1)
+                return GpuDetailMetrics(
+                    index=index,
+                    name=g.name,
+                    memory_total_mb=mem_total,
+                    load_percent=round(g.load * 100, 1),
+                    memory_used_mb=mem_used,
+                    memory_percent=round(mem_used / mem_total * 100, 1) if mem_total > 0 else 0.0,
+                    temperature=g.temperature,
+                )
+        except Exception:
+            logger.debug("GPUtil GPU detail fallback failed", exc_info=True)
+
+    # No GPU data at all
+    return GpuDetailMetrics(
+        index=index,
+        name="Unknown GPU",
+        memory_total_mb=0.0,
+        load_percent=0.0,
+        memory_used_mb=0.0,
+        memory_percent=0.0,
+    )
 
 
 def get_ram_metrics() -> RamMetrics:
