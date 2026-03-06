@@ -43,7 +43,7 @@
 
 ## Features
 
-### SpecterMonitor Control Service | In Work !
+### SpecterMonitor Control Service | Finally Here !
 
 <p align="center">
   <img src="Readme/Images/Image_3.png" width="40%" style="border-radius: 12px; border: 1px solid rgba(0, 240, 255, 0.2); box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);" alt="SpecterMonitor Control Service" />
