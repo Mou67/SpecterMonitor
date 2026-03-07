@@ -111,7 +111,7 @@ Click the RAM card for the physical memory view:
 | Status | Feature | Description |
 |:---:|---|---|
 | 📃 | **Remote Desktop** | View and control a remote PC's screen live in the browser — like TeamViewer, but local on your own network. Low-latency via WebSocket + WebRTC. |
-| 🛠️ | **GPU Deep-Dive** | Detailed view for graphics cards: VRAM usage, shader clock, fan speed, power draw, driver version, and temperature history. |
+| ✅ | **GPU Deep-Dive** | Detailed view for graphics cards: VRAM usage, shader clock, fan speed, power draw, driver version, and temperature history. |
 | 📃 | **Disk Deep-Dive** | S.M.A.R.T. data, read/write rates per partition, SSD health, NVMe temperature, and wear level. |
 | 📃 | **Alert System** | Configurable thresholds (CPU > 95%, RAM > 90%, Temp > 85C) with desktop notifications and optional Discord/Telegram webhook. |
 | 📃 | **Remote File Manager** | Browse, upload/download, and manage files on connected PCs — directly from the dashboard. |
